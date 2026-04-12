@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settle Up</title>
+    <!-- Modern font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Settle Up</h1>
+            <p class="subtitle">Simplify your debts.</p>
+        </header>
+
+        <main>
+            <section class="balances-section">
+                <div class="section-header">
+                    <h2>Players</h2>
+                    <button id="add-player-btn" class="icon-button" title="Add Player">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="lucide lucide-plus">
+                            <path d="M5 12h14" />
+                            <path d="M12 5v14" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="players-list" class="players-list">
+                    <!-- Dynamic player rows will be injected here -->
+                </div>
+
+                <div class="total-summary">
+                    <span>Total Pool: <strong id="total-pool">$0</strong></span>
+                    <span id="balance-warning" class="warning hidden">Imbalance: Sum must be $0</span>
+                </div>
+
+                <button id="calculate-btn" class="primary-button">Calculate Settle Up</button>
+            </section>
+
+            <section id="results-section" class="results-section hidden">
+                <h2>Transactions</h2>
+                <div id="transactions-list" class="transactions-list">
+                    <!-- Transactions injected here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with ❤️ for poker nights</p>
+        </footer>
+    </div>
+
+    <!-- Template for a single player row -->
+    <template id="player-row-template">
+        <div class="player-row">
+            <input type="text" class="player-name" placeholder="Name" required />
+            <div class="amount-input-group">
+                <span class="currency-symbol">$</span>
+                <input type="number" class="player-amount" placeholder="0" step="any" required />
+            </div>
+            <button class="remove-player-btn icon-button text-red" title="Remove Player">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-x">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
