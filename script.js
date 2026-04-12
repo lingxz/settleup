@@ -92,11 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Validate sum is close to zero (floating point)
-        if (Math.abs(sum) > 0.01) {
-            alert(`The total balances do not sum to zero (Off by $${sum.toFixed(2)}). Please ensure total winnings equal total losses.`);
-            return;
-        }
+        // Proceed with calculation even if there's an imbalance (sum != 0)
+        // The warning is already shown on the UI.
 
         const transactions = calculateDebts(balances);
         renderTransactions(transactions);
