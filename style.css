@@ -316,12 +316,12 @@ footer p {
     }
 
     .player-name {
-        flex: 1;
+        flex: 1.2;
         min-width: 0;
     }
 
     .amount-input-group {
-        flex: 1.2;
+        flex: 1;
     }
 
     .primary-button {
