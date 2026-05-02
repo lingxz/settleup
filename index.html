@@ -12,11 +12,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="view-settle">
     <div class="app-container">
         <header>
             <h1>Settle Up!</h1>
             <p class="subtitle">Simplify your debts.</p>
+            <div class="view-toggle">
+                <button id="view-settle-btn" class="toggle-btn active">Settle Up</button>
+                <button id="view-tracker-btn" class="toggle-btn">Track Buy-ins</button>
+            </div>
         </header>
 
         <main>
@@ -38,14 +42,16 @@
                 </div>
 
                 <div class="total-summary">
-                    <span>Total Pool: <strong id="total-pool">$0</strong></span>
-                    <span id="balance-warning" class="warning hidden">Imbalance: Sum must be $0</span>
+                    <span class="show-in-settle">Total Pool: <strong id="total-pool">$0</strong></span>
+                    <span id="balance-warning" class="warning hidden show-in-settle">Imbalance: Sum must be $0</span>
+                    <span class="show-in-tracker">Total Buy-ins: <strong id="total-buyins">0</strong></span>
                 </div>
 
-                <button id="calculate-btn" class="primary-button">Calculate</button>
+                <button id="calculate-btn" class="primary-button show-in-settle">Calculate</button>
+                <button id="share-tracker-btn" class="primary-button show-in-tracker">Copy Tracker Link</button>
             </section>
 
-            <section id="results-section" class="results-section hidden">
+            <section id="results-section" class="results-section hidden show-in-settle">
                 <div class="section-header">
                     <h2>Transactions</h2>
                     <button id="share-btn" class="icon-button" title="Copy Share Link">
@@ -67,9 +73,18 @@
     <template id="player-row-template">
         <div class="player-row">
             <input type="text" class="player-name" placeholder="Name" required />
-            <div class="amount-input-group">
+            <div class="amount-input-group show-in-settle">
                 <span class="currency-symbol">$</span>
                 <input type="number" class="player-amount" placeholder="0" step="any" required />
+            </div>
+            <div class="buyin-group show-in-tracker">
+                <button class="buyin-btn decrement icon-button" title="Remove Buy-in">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus"><path d="M5 12h14"/></svg>
+                </button>
+                <input type="number" class="buyin-count" value="0" min="0" />
+                <button class="buyin-btn increment icon-button" title="Add Buy-in">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
             </div>
             <button class="remove-player-btn icon-button text-red" title="Remove Player">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"

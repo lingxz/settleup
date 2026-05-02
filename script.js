@@ -9,6 +9,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const balanceWarning = document.getElementById('balance-warning');
     const template = document.getElementById('player-row-template');
     const shareBtn = document.getElementById('share-btn');
+    const shareTrackerBtn = document.getElementById('share-tracker-btn');
+    const totalBuyinsEl = document.getElementById('total-buyins');
+    const viewSettleBtn = document.getElementById('view-settle-btn');
+    const viewTrackerBtn = document.getElementById('view-tracker-btn');
+
+    // View toggling
+    viewSettleBtn.addEventListener('click', () => {
+        document.body.className = 'view-settle';
+        viewSettleBtn.classList.add('active');
+        viewTrackerBtn.classList.remove('active');
+    });
+
+    viewTrackerBtn.addEventListener('click', () => {
+        document.body.className = 'view-tracker';
+        viewTrackerBtn.classList.add('active');
+        viewSettleBtn.classList.remove('active');
+    });
 
     // Parse URL for state
     const urlParams = new URLSearchParams(window.location.search);
@@ -17,13 +34,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (stateKey) {
         try {
-            const initialPlayers = JSON.parse(decodeURIComponent(atob(stateKey)));
-            if (Array.isArray(initialPlayers) && initialPlayers.length > 0) {
-                initialPlayers.forEach(p => addPlayerRow(p.name, p.amount));
+            let parsedPlayers = [];
+            
+            if (stateKey.includes('~')) {
+                // New compact format: name~amount~buyins_name2~amount2~buyins2
+                parsedPlayers = stateKey.split('_').map(pStr => {
+                    const parts = pStr.split('~');
+                    return {
+                        name: decodeURIComponent(parts[0]),
+                        amount: parts[1] === '' ? '' : parseFloat(parts[1]),
+                        buyins: parseInt(parts[2], 10) || 0
+                    };
+                });
+            } else {
+                // Legacy base64 JSON format
+                const decoded = JSON.parse(decodeURIComponent(atob(stateKey)));
+                if (Array.isArray(decoded)) {
+                    parsedPlayers = decoded;
+                }
+            }
+
+            if (parsedPlayers.length > 0) {
+                parsedPlayers.forEach(p => addPlayerRow(p.name, p.amount, p.buyins));
                 loadedState = true;
                 updateTotal();
                 
-                if (urlParams.get('calc') === 'true') {
+                if (urlParams.get('view') === 'tracker') {
+                    document.body.className = 'view-tracker';
+                    viewTrackerBtn.classList.add('active');
+                    viewSettleBtn.classList.remove('active');
+                } else if (urlParams.get('calc') === 'true') {
                     setTimeout(() => handleCalculate(), 0);
                 }
             }
@@ -42,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addPlayerBtn.addEventListener('click', () => addPlayerRow());
     calculateBtn.addEventListener('click', handleCalculate);
 
-    function addPlayerRow(name = '', amount = '') {
+    function addPlayerRow(name = '', amount = '', buyins = 0) {
         const clone = template.content.cloneNode(true);
         const row = clone.querySelector('.player-row');
         
@@ -58,6 +98,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const nameInput = row.querySelector('.player-name');
         if (name) nameInput.value = name;
+
+        // Buy-in counter logic
+        const decBtn = row.querySelector('.decrement');
+        const incBtn = row.querySelector('.increment');
+        const countInput = row.querySelector('.buyin-count');
+        
+        countInput.value = buyins || 0;
+
+        countInput.addEventListener('input', () => {
+            let val = parseInt(countInput.value, 10);
+            if (isNaN(val) || val < 0) {
+                countInput.value = 0;
+            }
+            updateTotal();
+        });
+
+        decBtn.addEventListener('click', () => {
+            let current = parseInt(countInput.value, 10) || 0;
+            if (current > 0) {
+                countInput.value = current - 1;
+                updateTotal();
+            }
+        });
+
+        incBtn.addEventListener('click', () => {
+            let current = parseInt(countInput.value, 10) || 0;
+            countInput.value = current + 1;
+            updateTotal();
+        });
 
         playersList.appendChild(clone);
     }
@@ -86,6 +155,16 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             totalPoolEl.style.color = 'var(--text-primary)';
             balanceWarning.classList.add('hidden');
+        }
+
+        // Update total buy-ins
+        const countInputs = document.querySelectorAll('.buyin-count');
+        let totalBuyins = 0;
+        countInputs.forEach(input => {
+            totalBuyins += parseInt(input.value, 10) || 0;
+        });
+        if (totalBuyinsEl) {
+            totalBuyinsEl.textContent = totalBuyins;
         }
     }
 
@@ -210,45 +289,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return p.innerHTML;
     }
 
-    if (shareBtn) {
-        shareBtn.addEventListener('click', () => {
-            // Generate share URL with state and auto-calculate flag
-            let shareUrl = window.location.href.split('?')[0];
-            const rows = document.querySelectorAll('.player-row');
-            const originalBalances = [];
-            
-            for (let i = 0; i < rows.length; i++) {
-                const nameInput = rows[i].querySelector('.player-name').value.trim();
-                const amountInput = parseFloat(rows[i].querySelector('.player-amount').value);
-                const amount = isNaN(amountInput) ? 0 : amountInput;
-                if (nameInput || amount !== 0) {
-                    originalBalances.push({ name: nameInput, amount: amount === 0 ? '' : amount });
-                }
-            }
-            
-            if (originalBalances.length > 0) {
-                const stateStr = btoa(encodeURIComponent(JSON.stringify(originalBalances)));
-                const newUrl = new URL(shareUrl);
-                newUrl.searchParams.set('state', stateStr);
-                newUrl.searchParams.set('calc', 'true');
-                shareUrl = newUrl.href;
-            }
+    if (shareTrackerBtn) {
+        shareTrackerBtn.addEventListener('click', () => handleShare(shareTrackerBtn, false));
+    }
 
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                const originalTitle = shareBtn.title;
-                shareBtn.title = "Copied!";
-                const svg = shareBtn.innerHTML;
-                shareBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>`;
-                shareBtn.style.color = 'var(--success)';
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => handleShare(shareBtn, true));
+    }
+
+    function handleShare(btn, autoCalc = false) {
+        let shareUrl = window.location.href.split('?')[0];
+        const rows = document.querySelectorAll('.player-row');
+        const serializedPlayers = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const nameInput = rows[i].querySelector('.player-name').value.trim();
+            const amountInput = parseFloat(rows[i].querySelector('.player-amount').value);
+            const amount = isNaN(amountInput) ? '' : amountInput;
+            const buyins = parseInt(rows[i].querySelector('.buyin-count').value, 10) || 0;
+            
+            if (nameInput || amount !== '' || buyins !== 0) {
+                serializedPlayers.push(`${encodeURIComponent(nameInput)}~${amount}~${buyins}`);
+            }
+        }
+        
+        if (serializedPlayers.length > 0) {
+            const stateStr = serializedPlayers.join('_');
+            const newUrl = new URL(shareUrl);
+            newUrl.searchParams.set('state', stateStr);
+            if (autoCalc) {
+                newUrl.searchParams.set('calc', 'true');
+            }
+            if (document.body.classList.contains('view-tracker')) {
+                newUrl.searchParams.set('view', 'tracker');
+            }
+            shareUrl = newUrl.href;
+        }
+
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            const isIconBtn = btn.classList.contains('icon-button');
+            const originalText = btn.innerHTML;
+            
+            if (isIconBtn) {
+                const originalTitle = btn.title;
+                btn.title = "Copied!";
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>`;
+                btn.style.color = 'var(--success)';
                 
                 setTimeout(() => {
-                    shareBtn.title = originalTitle;
-                    shareBtn.innerHTML = svg;
-                    shareBtn.style.color = '';
+                    btn.title = originalTitle;
+                    btn.innerHTML = originalText;
+                    btn.style.color = '';
                 }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+            } else {
+                const originalTextContent = btn.textContent;
+                btn.textContent = "Link Copied!";
+                btn.style.backgroundColor = 'var(--success)';
+                
+                setTimeout(() => {
+                    btn.textContent = originalTextContent;
+                    btn.style.backgroundColor = '';
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
         });
     }
 });
